@@ -1,0 +1,206 @@
+{
+  "name": "Linkedin Post generator",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1KnzO2pt4Oz8yJ3rLX0RXVuAJum9zfopTImOOFUR_GtM",
+          "mode": "list",
+          "cachedResultName": "Content Links",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KnzO2pt4Oz8yJ3rLX0RXVuAJum9zfopTImOOFUR_GtM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KnzO2pt4Oz8yJ3rLX0RXVuAJum9zfopTImOOFUR_GtM/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "72625073-a834-44f9-9a4e-55eebb2b2ec0",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "2ojOqcXXIBgNLbKk",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = $input.all();\n\nconst latestArticle = articles[articles.length -1];\n\nreturn [latestArticle];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "ddab37e2-d8b9-477f-8ead-963a1e0a5477",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"model\": \"llama-3.1-sonar-small-128k-online\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"summarize the following article in detail\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Article: {{ $json['Content links'] }}\"\n    }\n  ],\n  \"max_tokens\": 500,\n  \"temperature\": 0.2,\n  \"top_p\": 0.9,\n  \"return_citations\": true,\n  \"search_domain_filter\": [\n    \"perplexity.ai\"\n  ],\n  \"return_images\": false,\n  \"return_related_questions\": false,\n  \"top_k\": 0,\n  \"stream\": false,\n  \"presence_penalty\": 0,\n  \"frequency_penalty\": 1\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "29fab2bb-c785-427c-a368-9af043b1cc19",
+      "name": "Perlexity"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Based on the following article summary. Create tailored social media posts for LinkedIn, Instagram, Twitter (X), Medium, and Facebook. Adapt the tone, length, and format to fit each platform’s audience and style.Provide the output in separate sections for each platform\n\nLinkedIn: Professional, insightful, value-driven. Add a brief call-to-action or question to spark conversation.\n\nInstagram: Friendly, visually engaging, concise. Use line breaks and emojis sparingly but effectively.\n\nTwitter (X): Punchy, opinionated, informative. Stay within 280 characters. Use hashtags where relevant.\n\nMedium: Thoughtful, narrative-driven, deeper insight. Expand the idea with a short introduction and a reflective tone.\n\nFacebook: Conversational, informative, slightly longer than Twitter/Instagram. Encourage engagement with a question or relatable hook.\n\nArticle summary : {{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        660,
+        0
+      ],
+      "id": "4b5b97b0-6eba-4923-a4b9-da1bc24e4818",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "pKmtOARtWvkXiHCQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "person": "W3BxJlk614",
+        "text": "={{ $json.message.content.LinkedIn.post }}\n\nOriginal Article Link: {{ $('Code').item.json['Content links'] }}",
+        "shareMediaCategory": "ARTICLE",
+        "additionalFields": {
+          "originalUrl": "={{ $('Code').item.json[\"Content links\"] }}"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        0
+      ],
+      "id": "fe333afc-13e4-4037-a366-1898ba1e257a",
+      "name": "LinkedIn",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "PQlWEs1YRFLoWq5L",
+          "name": "LinkedIn account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Perlexity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perlexity": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8e2a597a-2800-4e26-89d8-133391124200",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "66371a0b33203cdba4e6e3f085dfbd025eee9785bd3e5ae6729fd6c6373357cf"
+  },
+  "id": "ho16qCCJ8jj6MKdN",
+  "tags": []
+}
